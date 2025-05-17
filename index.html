@@ -470,19 +470,18 @@
                 row.insertCell().textContent = country.order;
                 
                 const countryCell = row.insertCell();
-                countryCell.className = 'country-cell'; // Aplicar clase para estilos y click
-                countryCell.addEventListener('click', () => openVotingModal(countryIndex)); // Hacer toda la celda clickeable
+                countryCell.className = 'country-cell'; 
+                countryCell.addEventListener('click', () => openVotingModal(countryIndex)); 
 
                 const flagImg = document.createElement('img');
                 flagImg.src = country.flagUrl;
                 flagImg.alt = `Bandera de ${country.name}`;
-                flagImg.className = 'flag-icon'; // No necesita la clase clickable individualmente ahora
+                flagImg.className = 'flag-icon'; 
                 flagImg.onerror = () => { flagImg.src = 'https://placehold.co/40x27/cccccc/000000?text=Error'; };
                 countryCell.appendChild(flagImg);
                 
                 const countryNameSpan = document.createElement('span');
                 countryNameSpan.textContent = country.name;
-                // countryNameSpan.className = "ml-2"; // El flex de country-cell maneja el espaciado implicitamente
                 countryCell.appendChild(countryNameSpan);
                 
                 const artistSongCell = row.insertCell();
@@ -581,7 +580,7 @@
                 return;
             }
             currentVotingCountryIndex = countryIndex;
-            currentVoterInModalIndex = 0; // Siempre empezar con el primer votante para este país
+            currentVoterInModalIndex = 0; 
             
             const country = countries[currentVotingCountryIndex];
             modalCountryName.textContent = country.name;
@@ -595,8 +594,8 @@
                 </div>
             `;
             modalErrorMessage.textContent = '';
-            populateVoteButtonsInModal(); // Se llama aquí para crear los botones
-            setupNextVoterInModal();    // Luego se configura el primer votante y se resaltan votos
+            populateVoteButtonsInModal(); 
+            setupNextVoterInModal();    
             votingModal.style.display = 'block';
         }
         
@@ -612,22 +611,6 @@
             }
         }
         
-        function highlightExistingVoteInModal() {
-            if (currentVoterInModalIndex < voters.length && currentVotingCountryIndex !== -1) {
-                const voterName = voters[currentVoterInModalIndex];
-                const country = countries[currentVotingCountryIndex];
-                const existingVote = country.votes[voterName];
-
-                const buttons = modalVoteButtonsContainer.querySelectorAll('.vote-button');
-                buttons.forEach(button => {
-                    button.classList.remove('vote-button-selected'); // Quitar selección previa
-                    if (existingVote !== null && parseInt(button.textContent) === existingVote) {
-                        button.classList.add('vote-button-selected'); // Aplicar selección
-                    }
-                });
-            }
-        }
-
         function handleModalVoteSubmission(score) {
             const country = countries[currentVotingCountryIndex];
             const voterName = voters[currentVoterInModalIndex];
@@ -647,7 +630,19 @@
             if (currentVoterInModalIndex < voters.length) {
                 const voterName = voters[currentVoterInModalIndex];
                 modalVoterName.textContent = `Turno de: ${voterName}`;
-                highlightExistingVoteInModal(); // Resaltar voto existente para el votante actual
+                
+                // Resaltar el voto previo del votante actual para este país, si existe
+                const country = countries[currentVotingCountryIndex];
+                const existingVote = country.votes[voterName];
+                
+                const buttons = modalVoteButtonsContainer.querySelectorAll('.vote-button');
+                buttons.forEach(button => {
+                    button.classList.remove('vote-button-selected'); // Limpiar resaltado anterior
+                    if (existingVote !== null && parseInt(button.textContent) === existingVote) {
+                        button.classList.add('vote-button-selected');
+                    }
+                });
+
             } else {
                 // Esto no debería ocurrir aquí si el flujo es correcto,
                 // handleModalVoteSubmission se encarga de cerrar cuando todos votan.
@@ -660,7 +655,7 @@
         function closeVotingModal() {
             votingModal.style.display = 'none';
             modalErrorMessage.textContent = '';
-            currentVotingCountryIndex = -1; // Resetear el índice del país actual
+            currentVotingCountryIndex = -1; 
         }
         
         resetContestBtn.addEventListener('click', () => {
