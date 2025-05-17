@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votaciones Eurovisión 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Color de fondo general */
+        }
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); /* Fondo oscuro semitransparente para el modal */
+            animation: fadeIn 0.3s ease-out;
+        }
+        .modal-content {
+            background-color: #ffffff; /* Fondo blanco para el contenido del modal */
+            margin: 8% auto;
+            padding: 2rem;
+            border-radius: 0.75rem; /* Esquinas redondeadas */
+            width: 90%;
+            max-width: 500px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); /* Sombra suave */
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .table th, .table td {
+            padding: 0.75rem 1rem; 
+            border: 1px solid #e2e8f0; /* Bordes de celda suaves */
+            text-align: left;
+            vertical-align: middle;
+        }
+        .table th {
+            background-color: #4a5568; /* Fondo oscuro para cabeceras de tabla */
+            color: white;
+            font-weight: 600;
+        }
+        .table tbody tr:nth-child(even) {
+            background-color: #f7fafc; /* Rayado de cebra sutil para filas pares */
+        }
+        .table tbody tr:hover {
+            background-color: #edf2f7; /* Efecto hover en filas */
+        }
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #4299e1; /* Azul primario */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #3182ce;
+        }
+        .btn-danger {
+            background-color: #e53e3e; /* Rojo para acciones de peligro */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c53030;
+        }
+        .btn-secondary {
+            background-color: #718096; /* Gris secundario */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4a5568;
+        }
+        .flag-icon {
+            width: 30px; 
+            height: auto;
+            border-radius: 0.25rem; 
+            margin-right: 0.5rem; 
+            vertical-align: middle; 
+        }
+        .country-cell { /* Contenedor para bandera y nombre del país */
+            display: flex;
+            align-items: center;
+            cursor: pointer; /* Hacer toda la celda clickeable */
+        }
+        .country-cell:hover .flag-icon { /* Efecto hover en bandera cuando se pasa por la celda */
+            transform: scale(1.1);
+        }
+        .country-cell:hover span { /* Efecto hover en nombre cuando se pasa por la celda */
+            text-decoration: underline;
+        }
+
+        input[type="text"], input[type="number"].table-input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.375rem;
+            width: 100%;
+        }
+        input[type="number"].table-input {
+             width: 5em; 
+             text-align: center;
+        }
+        .alert-message {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .alert-info {
+            background-color: #ebf8ff; 
+            color: #3182ce; 
+            border: 1px solid #bee3f8; 
+        }
+        .vote-button {
+            background-color: #63b3ed; 
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem; 
+            transition: background-color 0.2s ease-in-out;
+        }
+        .vote-button:hover {
+            background-color: #4299e1;
+        }
+        .vote-button-selected { /* Estilo para el botón de voto ya seleccionado en el modal */
+            background-color: #2b6cb0; /* Azul más oscuro para destacar */
+            border: 2px solid #2c5282; /* Borde para mayor énfasis */
+        }
+        .vote-cell { 
+            background-color: #e0f2fe; 
+        }
+        .vote-cell input.table-input { 
+            background-color: #f0faff;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <div class="container mx-auto max-w-7xl bg-white p-6 sm:p-8 rounded-xl shadow-2xl">
+
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Votaciones Eurovisión 2025 🎤🇨🇭</h1>
+            <p class="text-gray-600 mt-2">Sede: Basilea</p>
+        </header>
+
+        <div id="voter-setup-section" class="mb-8 p-6 bg-gray-100 rounded-lg shadow">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Configurar Votantes</h2>
+            <div id="voter-inputs-container" class="space-y-3 mb-4">
+                <div class="flex items-center space-x-2">
+                    <input type="text" name="voterName" class="voter-name-input flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Nombre del votante 1">
+                    <button type="button" class="remove-voter-btn btn bg-red-500 hover:bg-red-600 text-white text-xs p-1.5 rounded-md" onclick="removeVoterInput(this)">Eliminar</button>
+                </div>
+            </div>
+            <button id="add-voter-input-btn" type="button" class="btn btn-secondary text-sm mr-2">Añadir Votante</button>
+            <button id="submit-voters-btn" type="button" class="btn btn-primary">Empezar Votación</button>
+            <div id="voter-error-message" class="text-red-500 mt-2 text-sm"></div>
+        </div>
+
+        <div id="voting-section" class="hidden">
+            <div id="data-source-alert" class="alert-message alert-info">
+                Puedes votar haciendo clic en la bandera y nombre de cada país para abrir la ventana de votación, o introduciendo el voto directamente en las celdas de la tabla bajo el nombre de cada votante.
+            </div>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700">Tabla de Votación</h2>
+                <button id="reset-contest-btn" class="btn btn-danger">Reiniciar Concurso</button>
+            </div>
+            <div class="overflow-x-auto shadow-md rounded-lg">
+                <table id="countries-table" class="w-full table-auto border-collapse table">
+                    <thead id="countries-table-head">
+                        </thead>
+                    <tbody id="countries-table-body">
+                        </tbody>
+                </table>
+            </div>
+             <div class="mt-8 p-6 bg-gray-100 rounded-lg shadow">
+                <h3 class="text-xl font-semibold mb-3 text-gray-700">Votantes Registrados:</h3>
+                <ul id="registered-voters-list" class="list-disc list-inside text-gray-600">
+                    </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="voting-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title" class="text-2xl font-bold mb-6 text-gray-800">Votar por <span id="modal-country-name" class="text-blue-600"></span></h3>
+            <div id="modal-country-info" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                </div>
+            
+            <div id="modal-voter-turn-container">
+                <p id="modal-voter-name" class="text-lg font-semibold mb-2 text-gray-700"></p>
+                <label class="block text-sm font-medium text-gray-600 mb-2">Puntuación (1-10):</label>
+                <div id="modal-vote-buttons-container" class="grid grid-cols-5 gap-2 mb-4">
+                    </div>
+                <div id="modal-error-message" class="text-red-500 mt-1 text-sm"></div>
+            </div>
+
+            <div class="mt-8 flex justify-end space-x-3">
+                <button id="modal-cancel-btn" class="btn bg-gray-300 hover:bg-gray-400 text-gray-800">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- FUNCIÓN AUXILIAR PARA GENERAR IDs ---
+        function generateCountryId(name) {
+            return name.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        // --- DATOS INICIALES DE PAÍSES ---
+        const countryDataFromUser = [
+            { order: 1, name: 'Noruega', artistName: 'Kyle Alessandro', songName: 'Lighter', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/d9/Flag_of_Norway.svg', youtubeUrl: 'https://youtu.be/pUjWzQ671MQ' },
+            { order: 2, name: 'Luxemburgo', artistName: 'Laura Thorn', songName: 'La poupée monte le son', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/da/Flag_of_Luxembourg.svg', youtubeUrl: 'https://youtu.be/LVHu_KwHiKY' },
+            { order: 3, name: 'Estonia', artistName: 'Tommy Cash', songName: 'Espresso Macchiato', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Flag_of_Estonia.svg', youtubeUrl: 'https://youtu.be/5MS_Fczs_98' },
+            { order: 4, name: 'Israel', artistName: 'Yuval Raphael', songName: 'New Day Will Rise', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Israel.svg', youtubeUrl: 'https://youtu.be/Q3BELu4z6-U' },
+            { order: 5, name: 'Lituania', artistName: 'Katarsis', songName: 'Tavo akys', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/11/Flag_of_Lithuania.svg', youtubeUrl: 'https://youtu.be/R2f2aZ6Fy58' },
+            { order: 6, name: 'España', artistName: 'Melody', songName: 'Esa diva', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg', youtubeUrl: 'https://youtu.be/BvVxhbCW9rw' },
+            { order: 7, name: 'Ucrania', artistName: 'Ziferblat', songName: 'Bird of Pray', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/49/Flag_of_Ukraine.svg', youtubeUrl: 'https://youtu.be/OJ1x2aiL7ks' },
+            { order: 8, name: 'Reino Unido', artistName: 'Remember Monday', songName: 'What the Hell Just Happened?', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg', youtubeUrl: 'https://youtu.be/-hu6R3ZnOdY' },
+            { order: 9, name: 'Austria', artistName: 'JJ', songName: 'Wasted Love', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Flag_of_Austria.svg', youtubeUrl: 'https://youtu.be/-ieSTNpxvio' },
+            { order: 10, name: 'Islandia', artistName: 'Væb', songName: 'Róa', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/ce/Flag_of_Iceland.svg', youtubeUrl: 'https://youtu.be/s9P83Nl6D1M' },
+            { order: 11, name: 'Letonia', artistName: 'Tautumeitas', songName: 'Bur man laimi', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/84/Flag_of_Latvia.svg', youtubeUrl: 'https://youtu.be/RKw0OCgPV3s' },
+            { order: 12, name: 'Países Bajos', artistName: 'Claude', songName: 'C\'est la vie', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/20/Flag_of_the_Netherlands.svg', youtubeUrl: 'https://youtu.be/hEHwr5k9pd0' },
+            { order: 13, name: 'Finlandia', artistName: 'Erika Vikman', songName: 'Ich komme', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/bc/Flag_of_Finland.svg', youtubeUrl: 'https://youtu.be/Kg3QoTpnqyw' },
+            { order: 14, name: 'Italia', artistName: 'Lucio Corsi', songName: 'Volevo essere un duro', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Flag_of_Italy.svg', youtubeUrl: 'https://youtu.be/-Alz9MnqyZI' },
+            { order: 15, name: 'Polonia', artistName: 'Justyna Steczkowska', songName: 'Gaja', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/12/Flag_of_Poland.svg', youtubeUrl: 'https://youtu.be/YXHHDjiclxA' },
+            { order: 16, name: 'Alemania', artistName: 'Abor & Tynna', songName: 'Baller', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg', youtubeUrl: 'https://youtu.be/zJplC4-9Scs' },
+            { order: 17, name: 'Grecia', artistName: 'Klavdia', songName: 'Asteromata', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Flag_of_Greece.svg', youtubeUrl: 'https://youtu.be/aDiq8J9h6vQ' },
+            { order: 18, name: 'Armenia', artistName: 'PARG', songName: 'Survivor', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Flag_of_Armenia.svg', youtubeUrl: 'https://youtu.be/RfH5o3XtI2c' },
+            { order: 19, name: 'Suiza', artistName: 'Zoë Më', songName: 'Voyage', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f3/Flag_of_Switzerland.svg', youtubeUrl: 'https://youtu.be/dGX54zRExR8' },
+            { order: 20, name: 'Malta', artistName: 'Miriana Conte', songName: 'Serving', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/73/Flag_of_Malta.svg', youtubeUrl: 'https://youtu.be/sLVSwfRRvMA' },
+            { order: 21, name: 'Portugal', artistName: 'NAPA', songName: 'Deslocado', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Flag_of_Portugal.svg', youtubeUrl: 'https://youtu.be/-s1Cc2uEj3U' },
+            { order: 22, name: 'Dinamarca', artistName: 'Sissal', songName: 'Hallucination', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Flag_of_Denmark.svg', youtubeUrl: 'https://youtu.be/gdCAgiSIOUc' },
+            { order: 23, name: 'Suecia', artistName: 'KAJ', songName: 'Bara bada bastu', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/4c/Flag_of_Sweden.svg', youtubeUrl: 'https://youtu.be/WK3HOMhAeQY' },
+            { order: 24, name: 'Francia', artistName: 'Louane', songName: 'Maman', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg', youtubeUrl: 'https://youtu.be/ZFWzMZh47d0' },
+            { order: 25, name: 'San Marino', artistName: 'Gabry Ponte', songName: 'Tutta l\'Italia', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Flag_of_San_Marino.svg', youtubeUrl: 'https://youtu.be/Le3WpaLYRvE' },
+            { order: 26, name: 'Albania', artistName: 'Shkodra Elektronike', songName: 'Zjerm', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/36/Flag_of_Albania.svg', youtubeUrl: 'https://youtu.be/Sfvb761EEcM' }
+        ];
+
+        const initialCountriesData = countryDataFromUser.map(country => {
+            return {
+                id: generateCountryId(country.name),
+                order: country.order,
+                name: country.name,
+                flagUrl: country.flagUrl,
+                artistName: country.artistName,
+                songName: country.songName,
+                youtubeUrl: country.youtubeUrl
+            };
+        });
+
+        // --- ESTADO DE LA APLICACIÓN ---
+        let voters = [];
+        let countries = []; 
+        let currentVotingCountryIndex = -1;
+        let currentVoterInModalIndex = 0;
+
+        // --- ELEMENTOS DEL DOM ---
+        const voterSetupSection = document.getElementById('voter-setup-section');
+        const votingSection = document.getElementById('voting-section');
+        const voterInputsContainer = document.getElementById('voter-inputs-container');
+        const addVoterInputBtn = document.getElementById('add-voter-input-btn');
+        const submitVotersBtn = document.getElementById('submit-voters-btn');
+        const voterErrorMessage = document.getElementById('voter-error-message');
+        
+        const countriesTableHead = document.getElementById('countries-table-head');
+        const countriesTableBody = document.getElementById('countries-table-body');
+        const resetContestBtn = document.getElementById('reset-contest-btn');
+        const registeredVotersList = document.getElementById('registered-voters-list');
+
+        const votingModal = document.getElementById('voting-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCountryName = document.getElementById('modal-country-name');
+        const modalCountryInfo = document.getElementById('modal-country-info');
+        const modalVoterName = document.getElementById('modal-voter-name');
+        const modalVoteButtonsContainer = document.getElementById('modal-vote-buttons-container');
+        const modalErrorMessage = document.getElementById('modal-error-message');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+        // --- LÓGICA DE LA APLICACIÓN ---
+
+        function loadFromLocalStorage() {
+            const storedData = localStorage.getItem('eurovisionApp2025');
+            if (storedData) {
+                const parsedData = JSON.parse(storedData);
+                if (parsedData.voters && parsedData.voters.length > 0) {
+                    voters = parsedData.voters;
+                    let tempCountries = initialCountriesData.map(initialCountry => {
+                        const storedCountryData = parsedData.countries ? parsedData.countries.find(sc => sc.id === initialCountry.id) : null;
+                        return {
+                            ...initialCountry, 
+                            votes: storedCountryData && storedCountryData.votes ? storedCountryData.votes : voters.reduce((acc, voter) => { acc[voter] = null; return acc; }, {}),
+                            totalPoints: storedCountryData && storedCountryData.totalPoints ? storedCountryData.totalPoints : 0,
+                            rank: storedCountryData && storedCountryData.rank ? storedCountryData.rank : 0
+                        };
+                    });
+                    countries = tempCountries;
+                    showVotingSection();
+                    renderVotingTable();
+                    updateRegisteredVotersList();
+                } else {
+                    initializeCountriesWithVoters();
+                }
+            } else {
+                 initializeCountriesWithVoters();
+            }
+        }
+
+        function saveToLocalStorage() {
+            const countriesToStore = countries.map(country => ({
+                id: country.id,
+                votes: country.votes,
+                totalPoints: country.totalPoints,
+                rank: country.rank
+            }));
+            const dataToStore = {
+                voters: voters,
+                countries: countriesToStore 
+            };
+            localStorage.setItem('eurovisionApp2025', JSON.stringify(dataToStore));
+        }
+        
+        function initializeCountriesWithVoters() {
+            countries = initialCountriesData.map(country => ({
+                ...country,
+                votes: voters.reduce((acc, voter) => { 
+                    acc[voter] = null; 
+                    return acc;
+                }, {}),
+                totalPoints: 0, 
+                rank: 0         
+            }));
+        }
+
+        addVoterInputBtn.addEventListener('click', () => {
+            const count = voterInputsContainer.children.length + 1;
+            const newInputDiv = document.createElement('div');
+            newInputDiv.className = 'flex items-center space-x-2';
+            newInputDiv.innerHTML = `
+                <input type="text" name="voterName" class="voter-name-input flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Nombre del votante ${count}">
+                <button type="button" class="remove-voter-btn btn bg-red-500 hover:bg-red-600 text-white text-xs p-1.5 rounded-md" onclick="removeVoterInput(this)">Eliminar</button>
+            `;
+            voterInputsContainer.appendChild(newInputDiv);
+        });
+
+        window.removeVoterInput = function(button) {
+            if (voterInputsContainer.children.length > 1) { 
+                button.parentElement.remove();
+                 Array.from(voterInputsContainer.children).forEach((div, index) => {
+                    div.querySelector('input').placeholder = `Nombre del votante ${index + 1}`;
+                });
+            } else {
+                voterErrorMessage.textContent = 'Debe haber al menos un votante.';
+                 setTimeout(() => voterErrorMessage.textContent = '', 3000);
+            }
+        }
+
+        submitVotersBtn.addEventListener('click', () => {
+            voters = [];
+            const nameInputs = voterInputsContainer.querySelectorAll('.voter-name-input');
+            let allNamesValid = true;
+            let uniqueNames = new Set();
+
+            nameInputs.forEach(input => {
+                const name = input.value.trim();
+                if (name) {
+                    if (uniqueNames.has(name)) {
+                        allNamesValid = false;
+                        input.classList.add('border-red-500');
+                        voterErrorMessage.textContent = 'Los nombres de los votantes deben ser únicos.';
+                    } else {
+                        voters.push(name);
+                        uniqueNames.add(name);
+                        input.classList.remove('border-red-500');
+                    }
+                } else {
+                    allNamesValid = false;
+                    input.classList.add('border-red-500');
+                     voterErrorMessage.textContent = 'Todos los campos de nombre de votante deben estar rellenos.';
+                }
+            });
+
+            if (voters.length === 0 && nameInputs.length > 0 && nameInputs[0].value.trim() === '') {
+                 allNamesValid = false; 
+                 voterErrorMessage.textContent = 'Debe haber al menos un votante con nombre.';
+            }
+
+            if (allNamesValid && voters.length > 0) {
+                voterErrorMessage.textContent = '';
+                initializeCountriesWithVoters(); 
+                saveToLocalStorage(); 
+                showVotingSection();
+                renderVotingTable();
+                updateRegisteredVotersList();
+            } else if (voters.length === 0) {
+                 voterErrorMessage.textContent = 'Añade al menos un votante.';
+            }
+             setTimeout(() => { if(voterErrorMessage) voterErrorMessage.textContent = ''; }, 3000);
+        });
+
+        function updateRegisteredVotersList() {
+            registeredVotersList.innerHTML = ''; 
+            if (voters.length > 0) {
+                voters.forEach(voterName => {
+                    const li = document.createElement('li');
+                    li.textContent = voterName;
+                    registeredVotersList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = 'No hay votantes registrados.';
+                registeredVotersList.appendChild(li);
+            }
+        }
+
+        function showVotingSection() {
+            voterSetupSection.classList.add('hidden');
+            votingSection.classList.remove('hidden');
+        }
+
+        function renderVotingTable() {
+            countriesTableHead.innerHTML = '';
+            countriesTableBody.innerHTML = '';
+
+            if (!countries || countries.length === 0) { 
+                console.warn("Intentando renderizar tabla sin datos de países o votantes.")
+                return;
+            }
+
+            const headerRow = countriesTableHead.insertRow();
+            const headers = ['Orden', 'País', 'Artista - Canción'];
+            headers.forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                th.className = 'sticky top-0 z-10'; 
+                headerRow.appendChild(th);
+            });
+            voters.forEach(voterName => {
+                const th = document.createElement('th');
+                th.textContent = voterName;
+                th.className = 'sticky top-0 z-10 vote-cell'; 
+                headerRow.appendChild(th);
+            });
+            ['Total Pts', 'Ranking'].forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                th.className = 'sticky top-0 z-10';
+                headerRow.appendChild(th);
+            });
+
+            calculateTotalsAndRank();
+
+            countries.forEach((country, countryIndex) => {
+                const row = countriesTableBody.insertRow();
+                row.insertCell().textContent = country.order;
+                
+                const countryCell = row.insertCell();
+                countryCell.className = 'country-cell'; // Aplicar clase para estilos y click
+                countryCell.addEventListener('click', () => openVotingModal(countryIndex)); // Hacer toda la celda clickeable
+
+                const flagImg = document.createElement('img');
+                flagImg.src = country.flagUrl;
+                flagImg.alt = `Bandera de ${country.name}`;
+                flagImg.className = 'flag-icon'; // No necesita la clase clickable individualmente ahora
+                flagImg.onerror = () => { flagImg.src = 'https://placehold.co/40x27/cccccc/000000?text=Error'; };
+                countryCell.appendChild(flagImg);
+                
+                const countryNameSpan = document.createElement('span');
+                countryNameSpan.textContent = country.name;
+                // countryNameSpan.className = "ml-2"; // El flex de country-cell maneja el espaciado implicitamente
+                countryCell.appendChild(countryNameSpan);
+                
+                const artistSongCell = row.insertCell();
+                const artistSongLink = document.createElement('a');
+                artistSongLink.href = country.youtubeUrl;
+                artistSongLink.target = '_blank';
+                artistSongLink.rel = 'noopener noreferrer';
+                artistSongLink.textContent = `${country.artistName} - ${country.songName}`;
+                artistSongLink.className = 'text-blue-500 hover:text-blue-700 hover:underline';
+                artistSongCell.appendChild(artistSongLink);
+                
+                voters.forEach(voterName => {
+                    const voteCell = row.insertCell();
+                    const vote = country.votes[voterName];
+                    voteCell.textContent = (vote !== null && vote !== undefined) ? vote : '-';
+                    voteCell.classList.add('text-center', 'vote-cell'); 
+                    voteCell.addEventListener('click', () => makeCellEditable(voteCell, country.id, voterName));
+                });
+
+                row.insertCell().textContent = country.totalPoints;
+                row.insertCell().textContent = country.rank > 0 ? country.rank : '-';
+            });
+        }
+        
+        function makeCellEditable(cell, countryId, voterName) {
+            if (cell.querySelector('input')) return; 
+
+            const currentValue = cell.textContent === '-' ? '' : cell.textContent;
+            cell.innerHTML = `<input type="number" min="1" max="10" value="${currentValue}" class="table-input">`;
+            const input = cell.querySelector('input');
+            input.focus();
+            input.select();
+
+            const saveFunction = () => {
+                let score = parseInt(input.value);
+                if (isNaN(score) || score < 1 || score > 10) {
+                    score = null; 
+                }
+
+                const countryToUpdate = countries.find(c => c.id === countryId);
+                if (countryToUpdate) {
+                    countryToUpdate.votes[voterName] = score;
+                    saveToLocalStorage();
+                    renderVotingTable(); 
+                } else {
+                    cell.textContent = (currentValue === '' || currentValue === null) ? '-' : currentValue;
+                }
+            };
+
+            input.addEventListener('blur', saveFunction);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    input.blur(); 
+                }
+            });
+        }
+
+        function calculateTotalsAndRank() {
+            if (!countries || countries.length === 0) return;
+
+            countries.forEach(country => {
+                country.totalPoints = Object.values(country.votes).reduce((sum, vote) => sum + (Number(vote) || 0), 0);
+            });
+
+            const sortedCountries = [...countries].sort((a, b) => {
+                if (b.totalPoints !== a.totalPoints) {
+                    return b.totalPoints - a.totalPoints;
+                }
+                return a.order - b.order; 
+            });
+            
+            let currentRank = 0;
+            let lastPoints = -1;
+            let rankCount = 0; 
+            sortedCountries.forEach((sortedCountry) => {
+                const originalCountry = countries.find(c => c.id === sortedCountry.id);
+                if (!originalCountry) return;
+
+                rankCount++;
+                if (originalCountry.totalPoints > 0) { 
+                    if (originalCountry.totalPoints !== lastPoints) {
+                        currentRank = rankCount;
+                        lastPoints = originalCountry.totalPoints;
+                    }
+                    originalCountry.rank = currentRank;
+                } else {
+                    originalCountry.rank = 0; 
+                }
+            });
+        }
+
+        function openVotingModal(countryIndex) {
+            if (voters.length === 0) {
+                voterErrorMessage.textContent = "Primero debes configurar los votantes.";
+                setTimeout(() => voterErrorMessage.textContent = '', 3000);
+                return;
+            }
+            currentVotingCountryIndex = countryIndex;
+            currentVoterInModalIndex = 0; // Siempre empezar con el primer votante para este país
+            
+            const country = countries[currentVotingCountryIndex];
+            modalCountryName.textContent = country.name;
+            modalCountryInfo.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <img src="${country.flagUrl}" alt="Bandera de ${country.name}" class="w-10 h-auto rounded" onerror="this.src='https://placehold.co/40x27/cccccc/000000?text=Error'">
+                    <div>
+                        <p class="font-semibold">${country.artistName}</p>
+                        <p class="text-sm text-gray-600">${country.songName}</p>
+                    </div>
+                </div>
+            `;
+            modalErrorMessage.textContent = '';
+            populateVoteButtonsInModal(); // Se llama aquí para crear los botones
+            setupNextVoterInModal();    // Luego se configura el primer votante y se resaltan votos
+            votingModal.style.display = 'block';
+        }
+        
+        function populateVoteButtonsInModal() {
+            modalVoteButtonsContainer.innerHTML = ''; 
+            for (let i = 1; i <= 10; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.type = 'button'; 
+                button.className = 'btn vote-button text-lg'; 
+                button.addEventListener('click', () => handleModalVoteSubmission(i));
+                modalVoteButtonsContainer.appendChild(button);
+            }
+        }
+        
+        function highlightExistingVoteInModal() {
+            if (currentVoterInModalIndex < voters.length && currentVotingCountryIndex !== -1) {
+                const voterName = voters[currentVoterInModalIndex];
+                const country = countries[currentVotingCountryIndex];
+                const existingVote = country.votes[voterName];
+
+                const buttons = modalVoteButtonsContainer.querySelectorAll('.vote-button');
+                buttons.forEach(button => {
+                    button.classList.remove('vote-button-selected'); // Quitar selección previa
+                    if (existingVote !== null && parseInt(button.textContent) === existingVote) {
+                        button.classList.add('vote-button-selected'); // Aplicar selección
+                    }
+                });
+            }
+        }
+
+        function handleModalVoteSubmission(score) {
+            const country = countries[currentVotingCountryIndex];
+            const voterName = voters[currentVoterInModalIndex];
+            country.votes[voterName] = score;
+
+            currentVoterInModalIndex++;
+            if (currentVoterInModalIndex < voters.length) {
+                setupNextVoterInModal();
+            } else {
+                saveToLocalStorage();
+                renderVotingTable(); 
+                closeVotingModal();
+            }
+        }
+
+        function setupNextVoterInModal() {
+            if (currentVoterInModalIndex < voters.length) {
+                const voterName = voters[currentVoterInModalIndex];
+                modalVoterName.textContent = `Turno de: ${voterName}`;
+                highlightExistingVoteInModal(); // Resaltar voto existente para el votante actual
+            } else {
+                // Esto no debería ocurrir aquí si el flujo es correcto,
+                // handleModalVoteSubmission se encarga de cerrar cuando todos votan.
+                closeVotingModal();
+            }
+        }
+        
+        modalCancelBtn.addEventListener('click', closeVotingModal);
+
+        function closeVotingModal() {
+            votingModal.style.display = 'none';
+            modalErrorMessage.textContent = '';
+            currentVotingCountryIndex = -1; // Resetear el índice del país actual
+        }
+        
+        resetContestBtn.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres reiniciar el concurso? Se perderán todos los datos de votantes y votos.')) {
+                localStorage.removeItem('eurovisionApp2025');
+                voters = []; 
+                
+                votingSection.classList.add('hidden');
+                voterSetupSection.classList.remove('hidden');
+                
+                voterInputsContainer.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <input type="text" name="voterName" class="voter-name-input flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Nombre del votante 1">
+                        <button type="button" class="remove-voter-btn btn bg-red-500 hover:bg-red-600 text-white text-xs p-1.5 rounded-md" onclick="removeVoterInput(this)">Eliminar</button>
+                    </div>`;
+                if(voterErrorMessage) voterErrorMessage.textContent = '';
+                if(registeredVotersList) registeredVotersList.innerHTML = ''; 
+                
+                initializeCountriesWithVoters(); 
+
+                if(countriesTableHead) countriesTableHead.innerHTML = '';
+                if(countriesTableBody) countriesTableBody.innerHTML = '';
+            }
+        });
+
+        window.onclick = function(event) {
+            if (event.target == votingModal) {
+                closeVotingModal();
+            }
+        }
+
+        // --- INICIALIZACIÓN ---
+        loadFromLocalStorage(); 
+    </script>
+</body>
+</html>
